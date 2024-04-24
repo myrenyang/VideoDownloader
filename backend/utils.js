@@ -487,8 +487,11 @@ exports.getArchiveFolder = (type, user_uid = null, sub = null) => {
     }
 }
 
-exports.getBaseURL = () => {
+exports.getBaseURL = (withConfigPort = false) => {
+  if (withConfigPort) {
     return `${config_api.getConfigItem('ytdl_url')}:${config_api.getConfigItem('ytdl_port')}`
+  }
+  return config_api.getConfigItem('ytdl_url');
 }
 
 exports.updateLoggerLevel = (new_logger_level) => {
@@ -548,6 +551,6 @@ function File(id, title, thumbnailURL, isAudio, duration, url, uploader, size, p
     this.height = height;
     this.abr = abr;
     this.favorite = false;
-}   
+}
 exports.File = File;
 
