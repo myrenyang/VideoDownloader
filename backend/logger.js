@@ -3,11 +3,13 @@ const winston = require('winston');
 let debugMode = process.env.YTDL_MODE === 'debug';
 
 const defaultFormat = winston.format.printf(({ level, message, label, timestamp }) => {
-    return `${timestamp} ${level.toUpperCase()}: ${message}`;
+    return `[${timestamp}] ${level.toUpperCase()}: ${message}`;
 });
 const logger = winston.createLogger({
     level: 'info',
-    format: winston.format.combine(winston.format.timestamp(), defaultFormat),
+    format: winston.format.combine(winston.format.timestamp({
+      format: 'YYYY-MM-DD HH:mm:ss.SSS',
+    }), defaultFormat),
     defaultMeta: {},
     transports: [
       //
