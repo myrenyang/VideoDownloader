@@ -10,9 +10,9 @@ run-name: Docker Image CI for my-master branch and PR - by ${{ github.actor }}
 on:
   # Run workflow when push a commit
   push:
-    branches: [ "my-master" ]
+    branches: [ "test-workflow" ]
     paths-ignore:
-      - '.github/**'
+      # - '.github/**'
       - '.vscode/**'
       - 'chrome-extension/**'
       - 'releases/**'
@@ -65,6 +65,18 @@ jobs:
           echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
           echo "GITHUB_OUTPUT is:"
           cat $GITHUB_OUTPUT
+
+      - name: Create backend/version.json
+        id: create-json
+        uses: jsdaniell/create-json@v1.2.3
+        with:
+          name: "version.json"
+          json: '{"type": "docker", "tag": "my-master", "commit": "${{ steps.vars.outputs.GIT_SHA_SHORT }}", "date": "${{ steps.date.outputs.TODAY }}"}'
+          dir: 'backend/'
+
+      - name: Log version file
+        run: |
+          cat backend/version.json
 
       # Install Node.js
       # This puts both the node and npm commands in your PATH.
