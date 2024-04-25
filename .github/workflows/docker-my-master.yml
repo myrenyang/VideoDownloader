@@ -1,10 +1,10 @@
 # Optional - The name of the workflow as it will appear in the "Actions" tab of the GitHub repository.
 # If this field is omitted, the name of the workflow file will be used instead.
-name: Docker Image CI my-master
+name: Docker for my-master
 
 # Optional - The name for workflow runs generated from the workflow, which will appear in the list of workflow runs on your repository's "Actions" tab.
 # The github context to display the username of the actor that triggered the workflow run.
-run-name: ${{ github.actor }} is running docker workflow
+run-name: Docker Image CI for my-master - by ${{ github.actor }}
 
 on:
   push:
