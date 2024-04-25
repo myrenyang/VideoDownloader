@@ -2,35 +2,68 @@
 # If this field is omitted, the name of the workflow file will be used instead.
 name: Docker for my-master
 
-# Optional - The name for workflow runs generated from the workflow, which will appear in the list of workflow runs on your repository's "Actions" tab.
-# The github context to display the username of the actor that triggered the workflow run.
-run-name: Docker Image CI for my-master - by ${{ github.actor }}
+# Optional - The name for workflow runs generated from the workflow, which will appear in the list of workflow runs
+#  on your repository's "Actions" tab.
+# `github.actor` - The GitHub context to display the username of the actor that triggered the workflow run.
+run-name: Docker Image CI for my-master branch and PR - by ${{ github.actor }}
 
 on:
+  # Run workflow when push a commit
   push:
     branches: [ "my-master" ]
+    paths-ignore:
+      - '.github/**'
+      - '.vscode/**'
+      - 'chrome-extension/**'
+      - 'releases/**'
+      - '**/**.md'
+      - '**.crx'
+      - '**.pem'
+      - '.dockerignore'
+      - '.gitignore'
+
+  # Run workflow when activity on a pull_request event occurs
   pull_request:
+    # Filter targeting branches
     branches: [ "my-master" ]
 
-  # To run a workflow manually
+  # Run workflow manually
   workflow_dispatch:
     # Optionally specify inputs
     inputs:
       tag:
         description: 'Docker image tag'
-        required: true
+        required: false
         type: string
 
 jobs:
 
-  # Defines a job named building. The child keys will define properties of the job.
-  building:
+  # Defines a job named build. The child keys will define properties of the job.
+  build:
 
     runs-on: ubuntu-latest
 
     steps:
-      # Checks out repository onto the runner
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set timezone
+        uses: szenius/set-timezone@v2
+        with:
+          timezoneLinux: "${{ vars.TIMEZONE_LINUX }}"
+          timezoneMacos: "${{ vars.TIMEZONE_MACOS }}"
+          timezoneWindows: "${{ vars.TIMEZONE_WINDOWS }}"
+
+      - name: Log current time
+        run: |
+          echo "Current time is: $(date)"
+
+      - name: Get variable for git hash and current date
+        id: vars
+        run: |
+          echo "GIT_SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          echo "GITHUB_OUTPUT is: $GITHUB_OUTPUT"
 
       # Install Node.js
       # This puts both the node and npm commands in your PATH.
