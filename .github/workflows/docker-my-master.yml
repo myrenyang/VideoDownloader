@@ -57,7 +57,17 @@ jobs:
 
       - name: Print current time
         run: |
-          echo "Current time is: $(date +%s)"
+          echo "Current time is: $(date)"
+
+      - name: Print environment variables except GitHub
+        run: |
+          echo "Listing environment variables except GitHub..."
+          env | grep -v GITHUB_
+
+      - name: Print GitHub variables
+        run: |
+          echo "Listing GitHub variables..."
+          env | grep GITHUB_
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -70,32 +80,22 @@ jobs:
           echo "GITHUB_OUTPUT is:"
           cat $GITHUB_OUTPUT
 
-      - name: Print all environment variables
-        run: |
-          echo "Listing all environment variables..."
-          env
-
-      - name: Print GitHub variables
-        run: |
-          echo "Listing GitHub variables..."
-          env | grep GITHUB_
-
       - name: Create backend/version.json
         id: create-json
         uses: jsdaniell/create-json@v1.2.3
         with:
           name: "version.json"
-          json: '{"type": "docker", "tag": "${{ env.DOCKER_IMAGE_TAG }}", "commit": "${{ env.GIT_SHA_SHORT }}", "date": "${{ env.TODAY }}"}'
+          json: '{"type": "docker", "tag": "${{ env.DOCKER_IMAGE_TAG }}", "commit": "${{ steps.vars.outputs.GIT_SHA_SHORT }}", "date": "${{ steps.vars.outputs.TODAY }}"}'
           dir: 'backend/'
 
       - name: Log version file
         run: |
           cat backend/version.json
 
-      - name: Stop job if the previous step failed
+      - name: Stop job
         run: |
           echo "Stopping job"
-          exit 1
+          exit 0
 
       # Install Node.js
       # This puts both the node and npm commands in your PATH.
