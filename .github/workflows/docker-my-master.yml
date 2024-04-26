@@ -107,7 +107,7 @@ jobs:
 
     needs: pre-build
 
-    if: ${{ env.DOCKER_IMAGE_TAG }}
+    if: ${{ env.DOCKER_IMAGE_TAG != "" }}
 
     runs-on: ubuntu-latest
 
