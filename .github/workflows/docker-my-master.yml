@@ -183,7 +183,7 @@ jobs:
 
       - name: Print metadata
         env:
-          METADATA_JSON: ${{ toJSON(fromJSON(steps.meta.outputs.json)) }}
+          METADATA_JSON: ${{ toJSON(fromJSON(steps.docker-meta.outputs.json)) }}
         run: |
           echo "Print Docker image metadata which generated from above:"
           echo "$METADATA_JSON"
