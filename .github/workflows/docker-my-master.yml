@@ -42,31 +42,54 @@ env:
 
 jobs:
 
-  display-variables:
-    name: ${{ vars.JOB_NAME }}
-    # You can use configuration variables with the `vars` context for dynamic jobs
-    if: ${{ vars.USE_VARIABLES == 'true' }}
-    runs-on: ${{ vars.RUNNER }}
-    environment: ${{ vars.ENVIRONMENT_STAGE }}
+  # Defines job for debugging environment
+  dump-info:
+    runs-on: ubuntu-latest
     steps:
-      - name: Use variables
-        run: |
-          echo "repository variable : $REPOSITORY_VAR"
-          echo "organization variable : $ORGANIZATION_VAR"
-          echo "overridden variable : $OVERRIDE_VAR"
-          echo "variable from shell environment : ${{ vars.ENV_CONTEXT_VAR }}"
+      - name: Dump GitHub context
         env:
-          REPOSITORY_VAR: ${{ vars.REPOSITORY_VAR }}
-          ORGANIZATION_VAR: ${{ vars.ORGANIZATION_VAR }}
-          OVERRIDE_VAR: ${{ vars.OVERRIDE_VAR }}
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Dump job context
+        env:
+          JOB_CONTEXT: ${{ toJson(job) }}
+        run: echo "$JOB_CONTEXT"
+      - name: Dump steps context
+        env:
+          STEPS_CONTEXT: ${{ toJson(steps) }}
+        run: echo "$STEPS_CONTEXT"
+      - name: Dump runner context
+        env:
+          RUNNER_CONTEXT: ${{ toJson(runner) }}
+        run: echo "$RUNNER_CONTEXT"
+      - name: Dump strategy context
+        env:
+          STRATEGY_CONTEXT: ${{ toJson(strategy) }}
+        run: echo "$STRATEGY_CONTEXT"
+      - name: Dump matrix context
+        env:
+          MATRIX_CONTEXT: ${{ toJson(matrix) }}
+        run: echo "$MATRIX_CONTEXT"
 
-      - name: ${{ vars.HELLO_WORLD_STEP }}
-        if: ${{ vars.HELLO_WORLD_ENABLED == 'true' }}
-        uses: actions/hello-world-javascript-action@main
-        with:
-          who-to-greet: ${{ vars.GREET_NAME }}
+      - name: Show default environment variables
+        run: |
+          echo "The job_id is: $GITHUB_JOB"
+          echo "The id of this action is: $GITHUB_ACTION"
+          echo "The run id is: $GITHUB_RUN_ID"
+          echo "The GitHub Actor's username is: $GITHUB_ACTOR"
+          echo "GitHub SHA: $GITHUB_SHA"
 
-  # Defines job
+      - name: Print environment variables except GitHub
+        run: |
+          echo "Listing environment variables except GitHub..."
+          env | grep -v GITHUB_ | sort
+
+      - name: Print GitHub variables
+        run: |
+          echo "Listing GitHub variables..."
+          env | grep GITHUB_ | sort
+
+  # Defines job for pre-build tasks
   pre-build:
 
     runs-on: ubuntu-latest
@@ -85,16 +108,6 @@ jobs:
       - name: Print current time
         run: |
           echo "Current time is: $(date)"
-
-      - name: Print environment variables except GitHub
-        run: |
-          echo "Listing environment variables except GitHub..."
-          env | grep -v GITHUB_
-
-      - name: Print GitHub variables
-        run: |
-          echo "Listing GitHub variables..."
-          env | grep GITHUB_
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -139,6 +152,11 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    # Defaults:
+    #     DOCKERHUB_USERNAME  : michael235
+    #     DOCKERHUB_REPO      : youtube-downloader
+    #     DOCKER_IMAGE_TAG    : my-master
+
     steps:
       - name: Docker - Set up platform emulator
         uses: docker/setup-qemu-action@v3
@@ -149,18 +167,25 @@ jobs:
       - name: Docker - Generate image metadata
         id: docker-meta
         uses: docker/metadata-action@v5
-        # Defaults:
-        #     DOCKERHUB_USERNAME  : michael235
-        #     DOCKERHUB_REPO      : youtube-downloader
-        #     DOCKER_IMAGE_TAG: my-master
         with:
           images: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}
             ghcr.io/${{ github.repository_owner }}/${{ secrets.DOCKERHUB_REPO }}
+          # Ref to: https://github.com/marketplace/actions/docker-metadata-action#tags-input
+          # set latest tag for my-master branch
           tags: |
-            type=raw,${{ env.DOCKER_IMAGE_TAG }}-{{ date 'YYYY-MM-DD' }}
+            type=ref,event=push
             type=raw,${{ env.DOCKER_IMAGE_TAG }}
+            type=raw,${{ env.DOCKER_IMAGE_TAG }}-{{ date 'YYYY-MM-DD' tz='${{ secrets.TIMEZONE_LINUX }}' }}
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'my-master') }}
             type=sha,prefix=sha-,format=short
+
+      - name: Print metadata
+        env:
+          METADATA_JSON: ${{ toJSON(fromJSON(steps.meta.outputs.json)) }}
+        run: |
+          echo "Print Docker image metadata which generated from above:"
+          echo "$METADATA_JSON"
 
       - name: Docker - Login to Docker Hub
         uses: docker/login-action@v3
@@ -168,7 +193,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Login to GitHub Container Registry # ??
+      - name: Login to GitHub Container Registry # why register this?
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
