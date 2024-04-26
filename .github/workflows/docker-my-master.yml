@@ -92,14 +92,17 @@ jobs:
         run: |
           cat backend/version.json
 
-      - name: Stop job
+      - name: Conditional step to stop the job
         run: |
-          echo "Stopping job"
-          exit 0
+          if [ 1 ]; then
+            echo "Stopping the job with success status."
+            exit 0
+          fi
 
       # Install Node.js
       # This puts both the node and npm commands in your PATH.
-      - name: Not used for now
+      # Not used for now
+      - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '16'
