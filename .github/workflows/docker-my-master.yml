@@ -32,7 +32,8 @@ on:
     # Optionally specify inputs
     inputs:
       imageTag:
-        description: 'Docker image tag'
+        description: 'Input Docker image tag'
+        default: 'my-master'
         required: false
         type: string
 
@@ -43,10 +44,10 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    env:
+      DOCKER_IMAGE_TAG: ${{ inputs.imageTag || 'my-master' }}
 
+    steps:
       - name: Set timezone
         uses: szenius/set-timezone@v2.0
         with:
@@ -54,11 +55,14 @@ jobs:
           timezoneMacos: "${{ secrets.TIMEZONE_MACOS }}"
           timezoneWindows: "${{ secrets.TIMEZONE_WINDOWS }}"
 
-      - name: Log current time
+      - name: Print current time
         run: |
-          echo "Current time is: $(date)"
+          echo "Current time is: $(date +%s)"
 
-      - name: Get variable for git hash and current date
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get variable for git commit sha hash and current date
         id: vars
         run: |
           echo "GIT_SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
@@ -66,23 +70,84 @@ jobs:
           echo "GITHUB_OUTPUT is:"
           cat $GITHUB_OUTPUT
 
+      - name: Print all environment variables
+        run: |
+          echo "Listing all environment variables..."
+          env
+
+      - name: Print GitHub variables
+        run: |
+          echo "Listing GitHub variables..."
+          env | grep GITHUB_
+
       - name: Create backend/version.json
         id: create-json
         uses: jsdaniell/create-json@v1.2.3
         with:
           name: "version.json"
-          json: '{"type": "docker", "tag": "my-master", "commit": "${{ steps.vars.outputs.GIT_SHA_SHORT }}", "date": "${{ steps.date.outputs.TODAY }}"}'
+          json: '{"type": "docker", "tag": "${{ env.DOCKER_IMAGE_TAG }}", "commit": "${{ env.GIT_SHA_SHORT }}", "date": "${{ env.TODAY }}"}'
           dir: 'backend/'
 
       - name: Log version file
         run: |
           cat backend/version.json
 
+      - name: Stop job if the previous step failed
+        run: |
+          echo "Stopping job"
+          exit 1
+
       # Install Node.js
       # This puts both the node and npm commands in your PATH.
-      - uses: actions/setup-node@v4
+      - name: Not used for now
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
+
+      - name: Docker - Set up platform emulator
+        uses: docker/setup-qemu-action@v3
+
+      - name: Docker - Set up multi-arch docker build
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker - Generate image metadata
+        id: docker-meta
+        uses: docker/metadata-action@v5
+        # Defaults:
+        #     DOCKERHUB_USERNAME  : michael235
+        #     DOCKERHUB_REPO      : youtube-downloader
+        #     DOCKER_IMAGE_TAG: my-master
+        with:
+          images: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}
+            ghcr.io/${{ github.repository_owner }}/${{ secrets.DOCKERHUB_REPO }}
+          tags: |
+            type=raw,$DOCKER_IMAGE_TAG-{{ date 'YYYY-MM-DD' }}
+            type=raw,$DOCKER_IMAGE_TAG
+            type=sha,prefix=sha-,format=short
+
+      - name: Docker - Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Login to GitHub Container Registry # ??
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker - Build & push images
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64/v8,linux/arm/v7
+          push: true
+          tags: ${{ steps.docker-meta.outputs.tags }} # user/app:latest?
+          labels: ${{ steps.docker-meta.outputs.labels }}
 
       - name: Build the Docker image
         run: echo docker build . --file Dockerfile --tag my-image-name:$(date +%s)
