@@ -172,13 +172,12 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}
             ghcr.io/${{ github.repository_owner }}/${{ secrets.DOCKERHUB_REPO }}
           # Ref to: https://github.com/marketplace/actions/docker-metadata-action#tags-input
-          # set latest tag for my-master branch
-          # tz='${{ secrets.TIMEZONE_LINUX }}'
+          # set "latest" tag for my-master branch
           tags: |
             type=ref,event=branch
             type=raw,value=${{ env.DOCKER_IMAGE_TAG }}
             type=raw,value=${{ env.DOCKER_IMAGE_TAG }}-{{ date 'YYYY-MM-DD' tz='${{ secrets.TIMEZONE_LINUX }}' }}
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'test-workflow') }}
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'my-master') }}
             type=sha,prefix=sha-,format=short
 
       - name: Print metadata
