@@ -177,8 +177,8 @@ jobs:
           tags: |
             type=ref,event=branch
             type=raw,value=${{ env.DOCKER_IMAGE_TAG }}
-            type=raw,value=${{ env.DOCKER_IMAGE_TAG }}-{{ date 'YYYY-MM-DD' tz='Asia/Tokyo' }}
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'my-master') }}
+            type=raw,value=${{ env.DOCKER_IMAGE_TAG }}-{{ date 'YYYY-MM-DD' tz='${{ secrets.TIMEZONE_LINUX }}' }}
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'test-workflow') }}
             type=sha,prefix=sha-,format=short
 
       - name: Print metadata
