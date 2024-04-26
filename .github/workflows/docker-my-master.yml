@@ -92,12 +92,8 @@ jobs:
         run: |
           cat backend/version.json
 
-      - name: Conditional step to stop the job
-        run: |
-          if [ 1 ]; then
-            echo "Stopping the job with success status."
-            exit 0
-          fi
+      - name: Stop this job
+        run: exit 0
 
       # Install Node.js
       # This puts both the node and npm commands in your PATH.
