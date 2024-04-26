@@ -37,15 +37,15 @@ on:
         required: false
         type: string
 
+env:
+  DOCKER_IMAGE_TAG: ${{ inputs.imageTag || 'my-master' }}
+
 jobs:
 
-  # Defines a job named build. The child keys will define properties of the job.
-  build:
+  # Defines job named prepare.
+  prepare:
 
     runs-on: ubuntu-latest
-
-    env:
-      DOCKER_IMAGE_TAG: ${{ inputs.imageTag || 'my-master' }}
 
     steps:
       - name: Set timezone
@@ -107,6 +107,15 @@ jobs:
         with:
           node-version: '16'
 
+  docker-build-and-push:
+
+    needs: prepare
+
+    if: ${{ needs.prepare.outputs.alive == 'true' }}
+
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Docker - Set up platform emulator
         uses: docker/setup-qemu-action@v3
 
