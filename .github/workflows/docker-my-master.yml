@@ -79,12 +79,12 @@ jobs:
           echo "The GitHub Actor's username is: $GITHUB_ACTOR"
           echo "GitHub SHA: $GITHUB_SHA"
 
-      - name: Print environment variables except GitHub
+      - name: Log environment variables except GitHub
         run: |
           echo "Listing environment variables except GitHub..."
           env | grep -v GITHUB_ | sort
 
-      - name: Print GitHub variables
+      - name: Log GitHub variables
         run: |
           echo "Listing GitHub variables..."
           env | grep GITHUB_ | sort
@@ -174,7 +174,7 @@ jobs:
           # Ref to: https://github.com/marketplace/actions/docker-metadata-action#tags-input
           # set latest tag for my-master branch
           tags: |
-            type=ref,event=push
+            type=ref,event=branch
             type=raw,${{ env.DOCKER_IMAGE_TAG }}
             type=raw,${{ env.DOCKER_IMAGE_TAG }}-{{ date 'YYYY-MM-DD' tz='${{ secrets.TIMEZONE_LINUX }}' }}
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'my-master') }}
