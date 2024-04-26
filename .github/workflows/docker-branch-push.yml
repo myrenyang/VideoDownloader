@@ -38,9 +38,6 @@ on:
         required: false
         type: string
 
-env:
-  DOCKER_IMAGE_TAG: ${{ inputs.imageTag || env.GITHUB_REF_NAME }}
-
 jobs:
 
   # Defines job for debugging environment
@@ -94,6 +91,10 @@ jobs:
   build-and-push:
 
     runs-on: ubuntu-latest
+
+    env:
+      # Use branch name by default
+      DOCKER_IMAGE_TAG: ${{ inputs.imageTag || env.GITHUB_REF_NAME }}
 
     outputs:
       alive: 'true'
