@@ -47,6 +47,9 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    outputs:
+      alive: 'true'
+
     steps:
       - name: Set timezone
         uses: szenius/set-timezone@v2.0
@@ -107,7 +110,8 @@ jobs:
 
     needs: pre-build
 
-    if: env.DOCKER_IMAGE_TAG != ''
+    # Cannot use env.xxx because env is not available in job.if context
+    if: ${{ needs.pre-build.outputs.alive != 'true' }}
 
     runs-on: ubuntu-latest
 
