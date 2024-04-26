@@ -42,6 +42,30 @@ env:
 
 jobs:
 
+  display-variables:
+    name: ${{ vars.JOB_NAME }}
+    # You can use configuration variables with the `vars` context for dynamic jobs
+    if: ${{ vars.USE_VARIABLES == 'true' }}
+    runs-on: ${{ vars.RUNNER }}
+    environment: ${{ vars.ENVIRONMENT_STAGE }}
+    steps:
+      - name: Use variables
+        run: |
+          echo "repository variable : $REPOSITORY_VAR"
+          echo "organization variable : $ORGANIZATION_VAR"
+          echo "overridden variable : $OVERRIDE_VAR"
+          echo "variable from shell environment : ${{ vars.ENV_CONTEXT_VAR }}"
+        env:
+          REPOSITORY_VAR: ${{ vars.REPOSITORY_VAR }}
+          ORGANIZATION_VAR: ${{ vars.ORGANIZATION_VAR }}
+          OVERRIDE_VAR: ${{ vars.OVERRIDE_VAR }}
+
+      - name: ${{ vars.HELLO_WORLD_STEP }}
+        if: ${{ vars.HELLO_WORLD_ENABLED == 'true' }}
+        uses: actions/hello-world-javascript-action@main
+        with:
+          who-to-greet: ${{ vars.GREET_NAME }}
+
   # Defines job
   pre-build:
 
@@ -95,8 +119,8 @@ jobs:
         run: |
           cat backend/version.json
 
-      - name: Stop this job
-        run: exit 1
+#      - name: Stop this job
+#        run: exit 1
 
       # Install Node.js
       # This puts both the node and npm commands in your PATH.
@@ -111,7 +135,7 @@ jobs:
     needs: pre-build
 
     # Cannot use env.xxx because env is not available in job.if context
-    if: ${{ needs.pre-build.outputs.alive != 'true' }}
+    if: ${{ needs.pre-build.outputs.alive == 'true' }}
 
     runs-on: ubuntu-latest
 
