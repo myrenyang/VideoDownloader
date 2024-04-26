@@ -1,16 +1,17 @@
 # Optional - The name of the workflow as it will appear in the "Actions" tab of the GitHub repository.
 # If this field is omitted, the name of the workflow file will be used instead.
-name: Docker for my-master
+name: Docker for any branch and any push
 
 # Optional - The name for workflow runs generated from the workflow, which will appear in the list of workflow runs
 #  on your repository's "Actions" tab.
 # `github.actor` - The GitHub context to display the username of the actor that triggered the workflow run.
-run-name: Docker Image CI for my-master branch and PR - by ${{ github.actor }}
+run-name: Docker Image CI for branch - by ${{ github.actor }}
 
 on:
   # Run workflow when push a commit
   push:
-    branches: [ "test-workflow" ]
+    branches:
+      - '**'
     paths-ignore:
       # - '.github/**'
       - '.vscode/**'
@@ -23,22 +24,22 @@ on:
       - '.gitignore'
 
   # Run workflow when activity on a pull_request event occurs
-  pull_request:
+#  pull_request:
     # Filter targeting branches
-    branches: [ "my-master" ]
+#    branches: [ "my-master" ]
 
   # Run workflow manually
   workflow_dispatch:
     # Optionally specify inputs
     inputs:
       imageTag:
-        description: 'Input Docker image tag'
-        default: 'my-master'
+        description: 'Input Docker image tag, use branch name by default'
+        default: ''
         required: false
         type: string
 
 env:
-  DOCKER_IMAGE_TAG: ${{ inputs.imageTag || 'my-master' }}
+  DOCKER_IMAGE_TAG: ${{ inputs.imageTag || env.GITHUB_REF_NAME }}
 
 jobs:
 
@@ -90,7 +91,7 @@ jobs:
           env | grep GITHUB_ | sort
 
   # Defines job for pre-build tasks
-  pre-build:
+  build-and-push:
 
     runs-on: ubuntu-latest
 
@@ -132,8 +133,8 @@ jobs:
         run: |
           cat backend/version.json
 
-#      - name: Stop this job
-#        run: exit 1
+      - name: Stop this job
+        run: exit 1
 
       # Install Node.js
       # This puts both the node and npm commands in your PATH.
