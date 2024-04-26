@@ -210,5 +210,5 @@ jobs:
           tags: ${{ steps.docker-meta.outputs.tags }} # user/app:latest?
           labels: ${{ steps.docker-meta.outputs.labels }}
 
-      - name: Build the Docker image
-        run: echo docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+#      - name: Build the Docker image
+#        run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
