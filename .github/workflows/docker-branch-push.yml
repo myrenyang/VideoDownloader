@@ -1,6 +1,6 @@
 # Optional - The name of the workflow as it will appear in the "Actions" tab of the GitHub repository.
 # If this field is omitted, the name of the workflow file will be used instead.
-name: Docker for any branch and any push
+name: Docker Branch Build
 
 # Optional - The name for workflow runs generated from the workflow, which will appear in the list of workflow runs
 #  on your repository's "Actions" tab.
@@ -94,7 +94,7 @@ jobs:
 
     env:
       # Use branch name by default
-      DOCKER_IMAGE_TAG: ${{ inputs.imageTag || env.GITHUB_REF_NAME }}
+      DOCKER_IMAGE_TAG: ${{ inputs.imageTag || github.ref_name }}
 
     outputs:
       alive: 'true'
