@@ -5,7 +5,7 @@ name: Docker Branch Build
 # Optional - The name for workflow runs generated from the workflow, which will appear in the list of workflow runs
 #  on your repository's "Actions" tab.
 # `github.actor` - The GitHub context to display the username of the actor that triggered the workflow run.
-run-name: Docker Image CI for branch - by ${{ github.actor }} - ${{ github.ref }} - ${{ github.ref_name }}
+run-name: Docker Image CI for branch - by ${{ github.actor }}
 
 on:
   # Run workflow when push a commit
@@ -37,6 +37,10 @@ on:
         default: ''
         required: false
         type: string
+
+env:
+  # Use branch name by default, and convert it to valid image tag
+  DOCKER_IMAGE_TAG: ${{ inputs.imageTag || github.ref_name }}
 
 jobs:
 
@@ -91,10 +95,6 @@ jobs:
   build-and-push:
 
     runs-on: ubuntu-latest
-
-    env:
-      # Use branch name by default
-      DOCKER_IMAGE_TAG: ${{ inputs.imageTag || github.ref_name }}
 
     outputs:
       alive: 'true'
@@ -173,9 +173,8 @@ jobs:
             type=sha,prefix=sha-,format=short
 
       - name: Log metadata
-        if: ${{ ! failure() }}
         env:
-          METADATA_JSON: ${{ toJSON(fromJSON(steps.docker-meta.outputs.json)) }}
+          METADATA_JSON: ${{ toJSON(fromJSON(steps.docker-meta.outputs.json || '{}' )) }}
         run: |
           echo "Print Docker image metadata which generated from above:"
           echo "$METADATA_JSON"
