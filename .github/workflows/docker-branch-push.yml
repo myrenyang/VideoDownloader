@@ -5,7 +5,7 @@ name: Docker Branch Build
 # Optional - The name for workflow runs generated from the workflow, which will appear in the list of workflow runs
 #  on your repository's "Actions" tab.
 # `github.actor` - The GitHub context to display the username of the actor that triggered the workflow run.
-run-name: Docker Image CI for branch - by ${{ github.actor }}
+run-name: Docker Image CI for branch - by ${{ github.actor }} - ${{ github.ref }} - ${{ github.ref_name }}
 
 on:
   # Run workflow when push a commit
@@ -107,7 +107,7 @@ jobs:
           timezoneMacos: "${{ secrets.TIMEZONE_MACOS }}"
           timezoneWindows: "${{ secrets.TIMEZONE_WINDOWS }}"
 
-      - name: Print current time
+      - name: Log current time
         run: |
           echo "Current time is: $(date)"
 
@@ -173,6 +173,7 @@ jobs:
             type=sha,prefix=sha-,format=short
 
       - name: Log metadata
+        if: ${{ ! failure() }}
         env:
           METADATA_JSON: ${{ toJSON(fromJSON(steps.docker-meta.outputs.json)) }}
         run: |
