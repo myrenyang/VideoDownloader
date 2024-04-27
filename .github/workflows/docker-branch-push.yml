@@ -13,7 +13,7 @@ on:
     branches:
       - '**'
     paths-ignore:
-      # - '.github/**'
+      - '.github/**'
       - '.vscode/**'
       - 'chrome-extension/**'
       - 'releases/**'
@@ -33,7 +33,7 @@ on:
     # Optionally specify inputs
     inputs:
       imageTag:
-        description: 'Input Docker image tag, use branch name by default'
+        description: 'Input Docker image tag, use branch name if empty'
         default: ''
         required: false
         type: string
@@ -178,10 +178,10 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}
             ghcr.io/${{ github.repository_owner }}/${{ secrets.DOCKERHUB_REPO }}
           # Ref to: https://github.com/marketplace/actions/docker-metadata-action#tags-input
-          # set tag of branch name or tag name for any push
+          # set tag of branch or tag name for any push
           # set tag of "latest" for default branch
           # set tag with date for default branch
-          # set tag of custom name
+          # set tag of custom name if different to branch or tag name
           tags: |
             type=ref,event=branch
             type=ref,event=tag
@@ -197,8 +197,8 @@ jobs:
           echo "Print Docker image metadata which generated from above:"
           echo "$METADATA_JSON"
 
-      - name: Stop this job
-        run: exit 1
+      #      - name: Stop this job for checking logs
+      #        run: exit 1
 
       - name: Docker - Login to Docker Hub
         uses: docker/login-action@v3
