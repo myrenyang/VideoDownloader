@@ -48,6 +48,33 @@ jobs:
   dump-info:
     runs-on: ubuntu-latest
     steps:
+      - name: Overview - log key variables
+        run: |
+          echo "Variables Overview"
+          echo "GitHub full repository name is: $GITHUB_REPOSITORY"
+          echo "GitHub repository id is: $GITHUB_REPOSITORY_ID"
+          echo "GitHub owner name is: $GITHUB_REPOSITORY_OWNER"
+          echo "GitHub owner id is: $GITHUB_REPOSITORY_OWNER_ID"
+          echo "GitHub actor username is: $GITHUB_ACTOR"
+          echo "GitHub action id is: $GITHUB_ACTION"
+          echo "GitHub triggering actor is: $GITHUB_TRIGGERING_ACTOR"
+          echo "GitHub event name is: $GITHUB_EVENT_NAME
+          echo "GitHub ref type is: $GITHUB_REF_TYPE"
+          echo "GitHub full branch or tag name is: $GITHUB_REF"
+          echo "GitHub branch or tag name is: $GITHUB_REF_NAME"
+          echo "GitHub SHA: $GITHUB_SHA"
+          echo "GitHub workflow name is: $GITHUB_WORKFLOW"
+          echo "GitHub job id is: $GITHUB_JOB"
+          echo "GitHub run id is: $GITHUB_RUN_ID"
+          echo "GitHub workspace path is: $GITHUB_WORKSPACE"
+          echo "Runner arch is: $RUNNER_ARCH"
+          echo "Runner type is: $RUNNER_ENVIRONMENT"    # "github-hosted"
+          echo "Runner name is: $RUNNER_NAME"
+          echo "Runner OS is: $RUNNER_OS"
+          echo "Runner workspace path is: $RUNNER_WORKSPACE"
+          echo "Runner Env home is: $HOME"
+          echo "Runner Env image OS is: $ImageOS"
+          echo "Runner Env PATH is: $PATH"
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
@@ -72,20 +99,10 @@ jobs:
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
         run: echo "$MATRIX_CONTEXT"
-
-      - name: Show default environment variables
-        run: |
-          echo "The job_id is: $GITHUB_JOB"
-          echo "The id of this action is: $GITHUB_ACTION"
-          echo "The run id is: $GITHUB_RUN_ID"
-          echo "The GitHub Actor's username is: $GITHUB_ACTOR"
-          echo "GitHub SHA: $GITHUB_SHA"
-
       - name: Log environment variables except GitHub
         run: |
           echo "Listing environment variables except GitHub..."
           env | grep -v GITHUB_ | sort
-
       - name: Log GitHub variables
         run: |
           echo "Listing GitHub variables..."
