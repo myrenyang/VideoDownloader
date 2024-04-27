@@ -23,10 +23,10 @@ on:
       - '.dockerignore'
       - '.gitignore'
 
-  # Run workflow when activity on a pull_request event occurs
-#  pull_request:
+    # Run workflow when activity on a pull_request event occurs
+    #  pull_request:
     # Filter targeting branches
-#    branches: [ "my-master" ]
+  #    branches: [ "my-master" ]
 
   # Run workflow manually
   workflow_dispatch:
@@ -178,15 +178,15 @@ jobs:
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}
             ghcr.io/${{ github.repository_owner }}/${{ secrets.DOCKERHUB_REPO }}
           # Ref to: https://github.com/marketplace/actions/docker-metadata-action#tags-input
-          # set tag of branch name or tag name for any push
+          # set tag of branch or tag name for any push
           # set tag of "latest" for default branch
           # set tag with date for default branch
-          # set tag of custom name
+          # set tag of custom name if different to branch or tag name
           tags: |
             type=ref,event=branch
             type=ref,event=tag
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ github.repository.default_branch }}-{{ date 'YYYY-MM-DD' tz='${{ secrets.TIMEZONE_LINUX }}' }},enable={{is_default_branch}}
+            type=raw,value=${{ github.event.repository.default_branch }}-{{ date 'YYYY-MM-DD' tz='${{ secrets.TIMEZONE_LINUX }}' }},enable={{is_default_branch}}
             type=raw,value=${{ env.DOCKER_IMAGE_TAG }}
             # type=sha,prefix=sha-,format=short
 
@@ -197,8 +197,8 @@ jobs:
           echo "Print Docker image metadata which generated from above:"
           echo "$METADATA_JSON"
 
-      - name: Stop this job
-        run: exit 1
+#      - name: Stop this job
+#        run: exit 1
 
       - name: Docker - Login to Docker Hub
         uses: docker/login-action@v3
