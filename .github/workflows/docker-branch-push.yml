@@ -58,7 +58,7 @@ jobs:
           echo "GitHub actor username is: $GITHUB_ACTOR"
           echo "GitHub action id is: $GITHUB_ACTION"
           echo "GitHub triggering actor is: $GITHUB_TRIGGERING_ACTOR"
-          echo "GitHub event name is: $GITHUB_EVENT_NAME
+          echo "GitHub event name is: $GITHUB_EVENT_NAME"
           echo "GitHub ref type is: $GITHUB_REF_TYPE"
           echo "GitHub full branch or tag name is: $GITHUB_REF"
           echo "GitHub branch or tag name is: $GITHUB_REF_NAME"
@@ -68,7 +68,7 @@ jobs:
           echo "GitHub run id is: $GITHUB_RUN_ID"
           echo "GitHub workspace path is: $GITHUB_WORKSPACE"
           echo "Runner arch is: $RUNNER_ARCH"
-          echo "Runner type is: $RUNNER_ENVIRONMENT"
+          echo "Runner type is: $RUNNER_ENVIRONMENT"    # github-hosted
           echo "Runner name is: $RUNNER_NAME"
           echo "Runner OS is: $RUNNER_OS"
           echo "Runner workspace path is: $RUNNER_WORKSPACE"
