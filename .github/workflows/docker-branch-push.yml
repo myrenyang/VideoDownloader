@@ -1,0 +1,227 @@
+# Optional - The name of the workflow as it will appear in the "Actions" tab of the GitHub repository.
+# If this field is omitted, the name of the workflow file will be used instead.
+name: Docker Branch Build
+
+# Optional - The name for workflow runs generated from the workflow, which will appear in the list of workflow runs
+#  on your repository's "Actions" tab.
+# `github.actor` - The GitHub context to display the username of the actor that triggered the workflow run.
+run-name: Docker Image CI for branch - by ${{ github.actor }}
+
+on:
+  # Run workflow when push a commit
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      # - '.github/**'
+      - '.vscode/**'
+      - 'chrome-extension/**'
+      - 'releases/**'
+      - '**/**.md'
+      - '**.crx'
+      - '**.pem'
+      - '.dockerignore'
+      - '.gitignore'
+
+    # Run workflow when activity on a pull_request event occurs
+    #  pull_request:
+    # Filter targeting branches
+  #    branches: [ "my-master" ]
+
+  # Run workflow manually
+  workflow_dispatch:
+    # Optionally specify inputs
+    inputs:
+      imageTag:
+        description: 'Input Docker image tag, use branch name by default'
+        default: ''
+        required: false
+        type: string
+
+env:
+  # Use branch name by default, and convert it to valid image tag
+  DOCKER_IMAGE_TAG: ${{ inputs.imageTag || github.ref_name }}
+
+jobs:
+
+  # Defines job for debugging environment
+  dump-info:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary - log key variables
+        run: |
+          echo "Variables Overview"
+          echo "GitHub full repository name is: $GITHUB_REPOSITORY"
+          echo "GitHub repository id is: $GITHUB_REPOSITORY_ID"
+          echo "GitHub owner name is: $GITHUB_REPOSITORY_OWNER"
+          echo "GitHub owner id is: $GITHUB_REPOSITORY_OWNER_ID"
+          echo "GitHub actor username is: $GITHUB_ACTOR"
+          echo "GitHub action id is: $GITHUB_ACTION"
+          echo "GitHub triggering actor is: $GITHUB_TRIGGERING_ACTOR"
+          echo "GitHub event name is: $GITHUB_EVENT_NAME"
+          echo "GitHub ref type is: $GITHUB_REF_TYPE"
+          echo "GitHub full branch or tag name is: $GITHUB_REF"
+          echo "GitHub branch or tag name is: $GITHUB_REF_NAME"
+          echo "GitHub SHA: $GITHUB_SHA"
+          echo "GitHub workflow name is: $GITHUB_WORKFLOW"
+          echo "GitHub job id is: $GITHUB_JOB"
+          echo "GitHub run id is: $GITHUB_RUN_ID"
+          echo "GitHub workspace path is: $GITHUB_WORKSPACE"
+          echo "Runner arch is: $RUNNER_ARCH"
+          echo "Runner type is: $RUNNER_ENVIRONMENT"    # github-hosted
+          echo "Runner name is: $RUNNER_NAME"
+          echo "Runner OS is: $RUNNER_OS"
+          echo "Runner workspace path is: $RUNNER_WORKSPACE"
+          echo "Runner Env home is: $HOME"
+          echo "Runner Env image OS is: $ImageOS"
+          echo "Runner Env PATH is: $PATH"
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Dump job context
+        env:
+          JOB_CONTEXT: ${{ toJson(job) }}
+        run: echo "$JOB_CONTEXT"
+      - name: Dump steps context
+        env:
+          STEPS_CONTEXT: ${{ toJson(steps) }}
+        run: echo "$STEPS_CONTEXT"
+      - name: Dump runner context
+        env:
+          RUNNER_CONTEXT: ${{ toJson(runner) }}
+        run: echo "$RUNNER_CONTEXT"
+      - name: Dump strategy context
+        env:
+          STRATEGY_CONTEXT: ${{ toJson(strategy) }}
+        run: echo "$STRATEGY_CONTEXT"
+      - name: Dump matrix context
+        env:
+          MATRIX_CONTEXT: ${{ toJson(matrix) }}
+        run: echo "$MATRIX_CONTEXT"
+      - name: Log environment variables except GitHub
+        run: |
+          echo "Listing environment variables except GitHub..."
+          env | grep -v GITHUB_ | sort
+      - name: Log GitHub variables
+        run: |
+          echo "Listing GitHub variables..."
+          env | grep GITHUB_ | sort
+
+  # Defines job for pre-build tasks
+  build-and-push:
+
+    runs-on: ubuntu-latest
+
+    outputs:
+      alive: 'true'
+
+    steps:
+      - name: Set timezone
+        uses: szenius/set-timezone@v2.0
+        with:
+          timezoneLinux: "${{ secrets.TIMEZONE_LINUX }}"
+          timezoneMacos: "${{ secrets.TIMEZONE_MACOS }}"
+          timezoneWindows: "${{ secrets.TIMEZONE_WINDOWS }}"
+
+      - name: Log current time
+        run: |
+          echo "Current time is: $(date)"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get variable for git commit sha hash and current date
+        id: vars
+        run: |
+          echo "GIT_SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          echo "GITHUB_OUTPUT is:"
+          cat $GITHUB_OUTPUT
+
+      - name: Create backend/version.json
+        id: create-json
+        uses: jsdaniell/create-json@v1.2.3
+        with:
+          name: "version.json"
+          json: '{"type": "docker", "tag": "${{ env.DOCKER_IMAGE_TAG }}", "commit": "${{ steps.vars.outputs.GIT_SHA_SHORT }}", "date": "${{ steps.vars.outputs.TODAY }}"}'
+          dir: 'backend/'
+
+      - name: Log version file
+        run: |
+          cat backend/version.json
+
+      # Install Node.js
+      # This puts both the node and npm commands in your PATH.
+      # Not used for now
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'
+
+      - name: Docker - Set up platform emulator
+        uses: docker/setup-qemu-action@v3
+
+      - name: Docker - Set up multi-arch docker build
+        uses: docker/setup-buildx-action@v3
+
+      # Defaults:
+      #     DOCKERHUB_USERNAME  : michael235
+      #     DOCKERHUB_REPO      : youtube-downloader
+      #     DOCKER_IMAGE_TAG    : my-master
+
+      - name: Docker - Generate image metadata
+        id: docker-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.DOCKERHUB_REPO }}
+            ghcr.io/${{ github.repository_owner }}/${{ secrets.DOCKERHUB_REPO }}
+          # Ref to: https://github.com/marketplace/actions/docker-metadata-action#tags-input
+          # set tag of branch name or tag name for any push
+          # set tag of "latest" for default branch
+          # set tag with date for default branch
+          # set tag of custom name
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ github.event.repository.default_branch }}-{{ date 'YYYY-MM-DD' tz='${{ secrets.TIMEZONE_LINUX }}' }},enable={{is_default_branch}}
+            type=raw,value=${{ env.DOCKER_IMAGE_TAG }}
+            # type=sha,prefix=sha-,format=short
+
+      - name: Log metadata
+        env:
+          METADATA_JSON: ${{ toJSON(fromJSON(steps.docker-meta.outputs.json || '{}' )) }}
+        run: |
+          echo "Print Docker image metadata which generated from above:"
+          echo "$METADATA_JSON"
+
+      - name: Stop this job
+        run: exit 1
+
+      - name: Docker - Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: GitHub - Login to GitHub Container Registry # why register this?
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker - Build & push images
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64/v8,linux/arm/v7
+          push: true
+          tags: ${{ steps.docker-meta.outputs.tags }}
+          labels: ${{ steps.docker-meta.outputs.labels }}
+
+#      - name: Build the Docker image
+#        run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
