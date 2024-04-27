@@ -68,7 +68,7 @@ jobs:
           echo "GitHub run id is: $GITHUB_RUN_ID"
           echo "GitHub workspace path is: $GITHUB_WORKSPACE"
           echo "Runner arch is: $RUNNER_ARCH"
-          echo "Runner type is: $RUNNER_ENVIRONMENT"    # "github-hosted"
+          echo "Runner type is: $RUNNER_ENVIRONMENT"    # github-hosted
           echo "Runner name is: $RUNNER_NAME"
           echo "Runner OS is: $RUNNER_OS"
           echo "Runner workspace path is: $RUNNER_WORKSPACE"
